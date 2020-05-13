@@ -3,10 +3,12 @@ import copy
 import logging
 import random
 import torch
+import transformers
 from box import Box
 from collections import namedtuple
 from pathlib import Path
 from shutil import copyfile
+from transformers import get_linear_schedule_with_warmup
 
 import src
 
@@ -41,6 +43,7 @@ def main(args):
         device = torch.device(config.trainer.kwargs.device)
 
         logging.info('Create the training and validation datasets.')
+        config.dataset.setdefault('kwargs', {}).update(pretrain_weight=config.net.kwargs.pretrain_weight)
         config.dataset.setdefault('kwargs', {}).update(type_='train')
         train_dataset = _get_instance(src.data.datasets, config.dataset)
         config.dataset.setdefault('kwargs', {}).update(type_='valid')
@@ -55,8 +58,6 @@ def main(args):
         config_dataloader = copy.deepcopy(config.dataloader)
         config_dataloader.kwargs.update(valid_kwargs)
         valid_dataloader = _get_instance(src.data.dataloader, config_dataloader, valid_dataset)
-
-        raise Exception('stop')
 
         logging.info('Create the network architecture.')
         net_class = getattr(transformers, config.net.name)
@@ -81,12 +82,8 @@ def main(args):
         logging.info('Create the optimizer.')
         optimizer = _get_instance(torch.optim, config.optimizer, net.parameters())
 
-        if 'lr_scheduler' in config:
-            logging.info('Create the learning rate scheduler.')
-            lr_scheduler = _get_instance(torch.optim.lr_scheduler, config.lr_scheduler, optimizer)
-        else:
-            logging.info('Not using the learning rate scheduler.')
-            lr_scheduler = None
+        total_steps = len(train_dataloader) * config.trainer.kwargs.num_epochs
+        lr_scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=total_steps)
 
         logging.info('Create the logger.')
         config.logger.setdefault('kwargs', {}).update(log_dir=saved_dir / 'log',

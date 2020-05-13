@@ -1,7 +1,3 @@
 from .base_logger import BaseLogger
-from .mango_logger import MangoLogger
+from .task1_logger import Task1Logger
 
-__all__ = [
-    'BaseLogger',
-    'MangoLogger'
-]

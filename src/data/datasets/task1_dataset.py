@@ -3,19 +3,9 @@ import numpy as np
 import csv
 import pandas as pd
 import transformers
-# from torch._six import container_abcs, string_classes, int_classes
 from pathlib import Path
 from src.data.datasets import BaseDataset
-# from transformers import (BertConfig, BertForSequenceClassification, BertTokenizer,
-#                           XLMConfig, XLMForSequenceClassification, XLMTokenizer,
-#                           DistilBertConfig, DistilBertForSequenceClassification, DistilBertTokenizer,
-#                           XLNetConfig,XLNetForSequenceClassification,XLNetTokenizer,
-#                           RobertaConfig,RobertaForSequenceClassification,RobertaTokenizer
-#                           )
-# np_str_obj_array_pattern = re.compile(r'[SaUO]')
-# default_collate_err_msg_format = (
-#     "default_collate: batch must contain tensors, numpy arrays, numbers, "
-#     "dicts or lists; found {}")
+
 
 
 def sent_tokenize(sentences, tokenizer, MAX_LEN=128):
@@ -41,12 +31,12 @@ class Task1Dataset(BaseDataset):
         self.tokenizer = tokenizer_class.from_pretrained(pretrain_weight, do_lower_case=True)
 
         if self.type == 'train':
-            train = pd.read_csv(str(data_dir / Path(train.tsv)),delimiter='\t',header=None,names=['ids','label','alpha','sentence'])
+            train = pd.read_csv(str(data_dir / Path('train.tsv')),delimiter='\t',header=None,names=['ids','label','alpha','sentence'])
             self.sents, self.labels = train.sentence.values, train.label.values
             self.inputs, self.masks = sent_tokenize(self.sents, self.tokenizer, max_len)
             self.labels = torch.tensor(self.labels).to(torch.int64)
         elif self.type == 'valid':
-            val = pd.read_csv(str(data_dir / Path(val.tsv)),delimiter='\t',header=None,names=['ids','label','alpha','sentence'])
+            val = pd.read_csv(str(data_dir / Path('val.tsv')),delimiter='\t',header=None,names=['ids','label','alpha','sentence'])
             self.sents, self.labels = val.sentence.values, val.label.values
             self.inputs, self.masks = sent_tokenize(self.sents, self.tokenizer, max_len)
             self.labels = torch.tensor(self.labels).to(torch.int64)
@@ -63,4 +53,4 @@ class Task1Dataset(BaseDataset):
         return metadata
 
     def __len__(self):
-        return len(self.labels.size(0))
+        return self.labels.size(0)

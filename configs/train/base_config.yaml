@@ -1,0 +1,75 @@
+main:
+    random_seed: '8512'
+    saved_dir: '/home/tony/NLP_task/models/tmp/train'
+
+dataset:
+    name: 'Task1Dataset'
+    kwargs:
+        data_dir: "/home/tony/NLP_task/task1"
+        tokenizer: 'XLNetTokenizer'
+        max_len: 128
+
+dataloader:
+    name: 'Dataloader'
+    kwargs:
+        train:
+            batch_size: 32
+        valid:
+            batch_size: 16
+        shuffle: true
+        num_workers: 8
+
+net:
+    name: XLNetForSequenceClassification
+    kwargs:
+        pretrain_weight: 'xlnet-base-cased'
+        num_labels: 2
+        output_attentions: False
+        output_hidden_states: False
+
+losses:
+    - name: 'CrossEntropyLossWrapper'
+      weight: 1.0
+
+metrics:
+    - name: 'Accuracy'
+    - name: 'F1Score'
+
+optimizer:
+    name: 'AdamW'
+    kwargs:
+        lr: 2e-5
+        eps: 1e-8
+    # name: 'SGD'
+    # kwargs:
+    #     lr: 0.1
+    #     momentum: 0.9
+    #     weight_decay: 0.0005
+
+# lr_scheduler:
+#     name: 'MultiStepLR'
+#     kwargs:
+#         milestones: [6, 80]
+#         gamma: 0.1
+
+logger:
+    name: 'Task1Logger'
+    kwargs:
+        dummy_input: [16, 1, 256, 256]
+
+monitor:
+    name: 'Monitor'
+    kwargs:
+        mode: 'max'
+        target: 'F1Score'
+        saved_freq: 1
+        early_stop: 0
+
+trainer:
+    name: 'Task1Trainer'
+    kwargs:
+        device: 'cuda:0'
+        num_epochs: 100
+        grad_norm: True
+        # freeze_param: False
+        # unfreeze_epoch: 16

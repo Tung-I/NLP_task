@@ -2,7 +2,7 @@ from torchvision.utils import make_grid
 from src.callbacks.loggers import BaseLogger
 
 
-class MangoLogger(BaseLogger):
+class Task1Logger(BaseLogger):
     """The ACDC logger for the segmentation task.
     """
 

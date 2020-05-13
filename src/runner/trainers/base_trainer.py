@@ -31,7 +31,7 @@ class BaseTrainer:
 
     def __init__(self, saved_dir, device, train_dataloader, valid_dataloader,
                  net, loss_fns, loss_weights, metric_fns, optimizer, lr_scheduler,
-                 logger, monitor, num_epochs, valid_freq=1, freeze_param=False, unfreeze_epoch=1):
+                 logger, monitor, num_epochs, valid_freq=1, freeze_param=False, unfreeze_epoch=1, grad_norm=False):
         self.device = device
         self.train_dataloader = train_dataloader
         self.valid_dataloader = valid_dataloader
@@ -50,6 +50,7 @@ class BaseTrainer:
         self.epoch = 1
         self.freeze_param = freeze_param
         self.unfreeze_epoch = unfreeze_epoch
+        self.grad_norm = grad_norm
 
 
     def train(self):
@@ -146,13 +147,10 @@ class BaseTrainer:
                 lr = self.optimizer.param_groups[0]['lr']
 
                 loss.backward()
+                if self.grad_norm:
+                    torch.nn.utils.clip_grad_norm_(self.net.parameters(), 1.0)
                 self.optimizer.step()
                 self.optimizer.zero_grad()
-
-                # if isinstance(self.lr_scheduler, (CyclicLR, OneCycleLR)):
-                #     self.lr_scheduler.step()
-                # elif isinstance(self.lr_scheduler, CosineAnnealingWarmRestarts):
-                #     self.lr_scheduler.step((self.epoch - 1) + i / len(dataloader))
 
                 if (i + 1) == len(dataloader) and not dataloader.drop_last:
                     batch_size = len(dataloader.dataset) % dataloader.batch_size

@@ -27,6 +27,8 @@ class EpochLog:
         if metrics is not None:
             for metric_name in metrics.keys():
                 self.log[metric_name] = 0
+        # use if f1score in metrics
+        self.f1score = 0
 
     def update(self, batch_size, loss, losses=None, metrics=None, lr=None):
         """Accumulate the computed losses and metrics.
@@ -46,15 +48,21 @@ class EpochLog:
         if metrics is not None:
             for metric_name, metric in metrics.items():
                 self.log[metric_name] += metric.item() * batch_size
+
         if lr is not None:
             self.log['lr'] = lr
+        if self.log.get('F1Score') is not None:
+            self.log['F1Score'] = metrics['F1Score']
+            self.f1score = metrics['F1Score']
 
     @property
     def on_step_end_log(self):
-        # return dict((key, f'{value / self.count: .3f}') for key, value in self.log.items())
         output = dict((key, f'{value / self.count: .3f}') for key, value in self.log.items())
         if self.log.get('lr') is not None:
             output['lr'] = self.log['lr']
+
+        if self.log.get('F1Score') is not None:
+            output['F1Score'] = f'{self.f1score: .3f}'
         return output
 
     @property
