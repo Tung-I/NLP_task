@@ -67,4 +67,11 @@ class EpochLog:
 
     @property
     def on_epoch_end_log(self):
-        return dict((key, value / self.count) for key, value in self.log.items())
+        # return dict((key, value / self.count) for key, value in self.log.items())
+        output = dict((key, value / self.count) for key, value in self.log.items())
+        if self.log.get('lr') is not None:
+            output['lr'] = self.log['lr']
+
+        if self.log.get('F1Score') is not None:
+            output['F1Score'] = float(self.f1score)
+        return output
