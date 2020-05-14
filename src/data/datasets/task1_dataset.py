@@ -31,26 +31,35 @@ class Task1Dataset(BaseDataset):
         self.tokenizer = tokenizer_class.from_pretrained(pretrain_weight, do_lower_case=True)
 
         if self.type == 'train':
-            train = pd.read_csv(str(data_dir / Path('train.tsv')),delimiter='\t',header=None,names=['ids','label','alpha','sentence'])
+            train = pd.read_csv(str(data_dir / Path('train.tsv')), delimiter='\t', header=None, names=['ids','label','alpha','sentence'])
             self.sents, self.labels = train.sentence.values, train.label.values
             self.inputs, self.masks = sent_tokenize(self.sents, self.tokenizer, max_len)
             self.labels = torch.tensor(self.labels).to(torch.int64)
         elif self.type == 'valid':
-            val = pd.read_csv(str(data_dir / Path('val.tsv')),delimiter='\t',header=None,names=['ids','label','alpha','sentence'])
+            val = pd.read_csv(str(data_dir / Path('val.tsv')), delimiter='\t', header=None, names=['ids','label','alpha','sentence'])
             self.sents, self.labels = val.sentence.values, val.label.values
             self.inputs, self.masks = sent_tokenize(self.sents, self.tokenizer, max_len)
             self.labels = torch.tensor(self.labels).to(torch.int64)
+        elif self.type == 'test':
+            test = pd.read_csv(str(data_dir / Path('test.tsv')), delimiter='\t', header=None, dtype={'id': str,'text':str}, names=['id', 'sentence'])
+            self.sents = test.sentence
+            self.ids = test.id.values
+            self.inputs, self.masks = sent_tokenize(self.sents, self.tokenizer, max_len)
         else:
             raise Exception('The type of dataset is undefined!')
 
     def __getitem__(self, index):
-        inp = self.inputs[index]
-        gt = self.labels[index]
-        mask = self.masks[index]
-        
-        metadata = {'inputs': inp, 'targets': gt, 'masks': mask}
+        if self.type != 'test':
+            inp = self.inputs[index]
+            gt = self.labels[index]
+            mask = self.masks[index]
+            metadata = {'inputs': inp, 'targets': gt, 'masks': mask}
+        else:
+            inp = self.inputs[index]
+            mask = self.masks[index]
+            metadata = {'inputs': inp, 'masks': mask}
 
         return metadata
 
     def __len__(self):
-        return self.labels.size(0)
+        return self.inputs.size(0)

@@ -1,6 +1,6 @@
 main:
     random_seed: '8512'
-    saved_dir: '/home/tony/NLP_task/models/tmp/train'
+    saved_dir: '/home/tony/NLP_task/models/weighted_CE/train'
 
 dataset:
     name: 'Task1Dataset'
@@ -13,7 +13,7 @@ dataloader:
     name: 'Dataloader'
     kwargs:
         train:
-            batch_size: 32
+            batch_size: 42
         valid:
             batch_size: 16
         shuffle: true
@@ -29,6 +29,8 @@ net:
 
 losses:
     - name: 'CrossEntropyLossWrapper'
+      kwargs:
+          weight: [1., 9.]
       weight: 1.0
 
 metrics:
@@ -62,7 +64,7 @@ monitor:
     kwargs:
         mode: 'max'
         target: 'F1Score'
-        saved_freq: 1
+        saved_freq: 10
         early_stop: 0
 
 trainer:

@@ -3,6 +3,7 @@ import logging
 import math
 import random
 import torch
+import numpy as np
 from tqdm import tqdm
 
 from src.runner.utils import EpochLog
@@ -128,6 +129,8 @@ class BaseTrainer:
             batch (dict or sequence): The last batch of the data.
             outputs (torch.Tensor or sequence of torch.Tensor): The corresponding model outputs.
         """
+        for fn in self.metric_fns:
+            fn.reset_count()
         if mode == 'train':
             self.net.train()
             dataloader = self.train_dataloader
@@ -144,6 +147,7 @@ class BaseTrainer:
                 losses = train_dict.get('losses')
                 metrics = train_dict.get('metrics')
                 outputs = train_dict.get('outputs')
+
                 lr = self.optimizer.param_groups[0]['lr']
 
                 loss.backward()

@@ -70,9 +70,9 @@ def main(args):
         defaulted_loss_fns = [loss_fn for loss_fn in dir(torch.nn) if 'Loss' in loss_fn]
         for config_loss in config.losses:
             if config_loss.name in defaulted_loss_fns:
-                loss_fn = _get_instance(torch.nn, config_loss)
+                loss_fn = _get_instance(torch.nn, config_loss).to(device)
             else:
-                loss_fn = _get_instance(src.model.losses, config_loss)
+                loss_fn = _get_instance(src.model.losses, config_loss).to(device)
             loss_fns.append(loss_fn)
             loss_weights.append(config_loss.weight)
 
@@ -129,66 +129,24 @@ def main(args):
 
         logging.info('Create the testing dataset.')
         config.dataset.setdefault('kwargs', {}).update(type_='test')
+        config.dataset.setdefault('kwargs', {}).update(pretrain_weight=config.net.kwargs.pretrain_weight)
         test_dataset = _get_instance(src.data.datasets, config.dataset)
 
         logging.info('Create the testing dataloader.')
-        cls = getattr(src.data.datasets, config.dataset.name)
-        sampler = getattr(cls, 'sampler', None)
-        batch_sampler = getattr(cls, 'batch_sampler', None)
-        collate_fn = getattr(cls, 'collate_fn', None)
-        worker_init_fn = getattr(cls, 'worker_init_fn', None)
-        config.dataloader.setdefault('kwargs', {}).update(sampler=sampler,
-                                                          batch_sampler=batch_sampler,
-                                                          collate_fn=collate_fn,
-                                                          worker_init_fn=worker_init_fn)
         test_dataloader = _get_instance(src.data.dataloader, config.dataloader, test_dataset)
 
         logging.info('Create the network architecture.')
-        net = _get_instance(src.model.nets, config.net).to(device)
-
-        logging.info('Create the loss functions and corresponding weights.')
-        loss_names, loss_fns, loss_weights = [], [], []
-        defaulted_loss_fns = tuple(loss_fn for loss_fn in dir(torch.nn) if 'Loss' in loss_fn)
-        for config_loss in config.losses:
-            loss_name = config_loss.get('alias', config_loss.name)
-            if config_loss.name in defaulted_loss_fns:
-                loss_fn = _get_instance(torch.nn, config_loss).to(device)
-            else:
-                loss_fn = _get_instance(src.model.losses, config_loss).to(device)
-            loss_weight = config_loss.get('weight', 1 / len(config.losses))
-            loss_names.append(loss_name)
-            loss_fns.append(loss_fn)
-            loss_weights.append(loss_weight)
-        LossFns, LossWeights = namedtuple('LossFns', loss_names), namedtuple('LossWeights', loss_names)
-        loss_fns, loss_weights = LossFns(*loss_fns), LossWeights(*loss_weights)
-
-        if 'metrics' in config:
-            logging.info('Create the metric functions.')
-            metric_names, metric_fns = [], []
-            defaulted_metric_fns = tuple(metric_fn for metric_fn in dir(torch.nn) if 'Loss' in metric_fn)
-            for config_metric in config.metrics:
-                metric_name = config_metric.get('alias', config_metric.name)
-                if config_metric.name in defaulted_metric_fns:
-                    metric_fn = _get_instance(torch.nn, config_metric).to(device)
-                else:
-                    metric_fn = _get_instance(src.model.metrics, config_metric).to(device)
-                metric_names.append(metric_name)
-                metric_fns.append(metric_fn)
-            MetricFns = namedtuple('MetricFns', metric_names)
-            metric_fns = MetricFns(*metric_fns)
-        else:
-            logging.info('Not using the metric functions.')
-            metric_fns = None
+        net_class = getattr(transformers, config.net.name)
+        net = net_class.from_pretrained(config.net.kwargs.pretrain_weight, num_labels=config.net.kwargs.num_labels, 
+                          output_attentions=config.net.kwargs.output_attentions, output_hidden_states=config.net.kwargs.output_hidden_states)
+        net = net.to(device)
 
         logging.info('Create the predictor.')
         kwargs = {
             'saved_dir': saved_dir,
             'device': device,
             'test_dataloader': test_dataloader,
-            'net': net,
-            'loss_fns': loss_fns,
-            'loss_weights': loss_weights,
-            'metric_fns': metric_fns
+            'net': net
         }
         config.predictor.kwargs.update(kwargs)
         predictor = _get_instance(src.runner.predictors, config.predictor)

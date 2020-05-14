@@ -22,11 +22,14 @@ class Task1Trainer(BaseTrainer):
 
         metrics = {metric.get_name():metric(logits, targets.view(-1)) for metric in self.metric_fns}
 
+        # print('{l1}, {l2}'.format(l1=loss, l2=l))
+
         return {
             'loss': loss,
             'losses': losses,
             'metrics': metrics,
-            'outputs': logits
+            'outputs': logits,
+            'b_labels': targets
         }
 
     def _valid_step(self, batch):

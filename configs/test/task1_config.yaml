@@ -1,0 +1,32 @@
+main:
+    saved_dir: '/home/tony/NLP_task/models/baseline/test'
+    loaded_path: '/home/tony/NLP_task/models/baseline/train/checkpoints/model_best.pth'
+
+dataset:
+    name: 'Task1Dataset'
+    kwargs:
+        data_dir: "/home/tony/NLP_task/task1"
+        tokenizer: 'XLNetTokenizer'
+        max_len: 128
+
+dataloader:
+    name: 'Dataloader'
+    kwargs:
+        batch_size: 42
+        shuffle: False
+        num_workers: 8
+
+net:
+    name: XLNetForSequenceClassification
+    kwargs:
+        pretrain_weight: 'xlnet-base-cased'
+        num_labels: 2
+        output_attentions: False
+        output_hidden_states: False
+
+predictor:
+    name: 'BasePredictor'
+    kwargs:
+        device: 'cuda:0'
+        id_file: "/home/tony/NLP_task/task1/test.tsv"
+
