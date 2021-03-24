@@ -36,7 +36,7 @@ pytz==2020.1
 regex==2020.5.7
 requests==2.23.0
 requests-oauthlib==1.2.0
-rsa==4.0
+rsa==4.1
 ruamel.yaml==0.16.6
 ruamel.yaml.clib==0.2.0
 sacremoses==0.0.43
